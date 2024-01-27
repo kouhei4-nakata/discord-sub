@@ -24,7 +24,7 @@ const getSubscriptionHistory = async (customerId) => {
   });
 };
 
-app.post('/create-checkout-session', async (req, res) => {
+const createCheckoutSession = async (req, res) => { // Added this function
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     line_items: [
@@ -36,7 +36,9 @@ app.post('/create-checkout-session', async (req, res) => {
   });
 
   res.json({ id: session.id });
-});
+};
+
+app.post('/create-checkout-session', createCheckoutSession); // Updated this line
 
 app.post('/webhook', (req, res) => {
   let event;
@@ -68,4 +70,5 @@ module.exports = {
   createSubscription,
   cancelSubscription,
   getSubscriptionHistory,
+  createCheckoutSession, // Added this line
 };
