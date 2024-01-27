@@ -4,7 +4,7 @@ const config = require('./config.json');
 const stripe = require('stripe')(config.stripe.secret_key);
 
 const client = new Discord.Client({
-  intents: [Discord.Intents.FLAGS.Guilds, Discord.Intents.FLAGS.GuildMessages, Discord.Intents.FLAGS.DirectMessages]
+  intents: [Discord.Intents.FLAGS.Guilds, Discord.Intents.FLAGS.MessageContent, Discord.Intents.FLAGS.DirectMessageContent]
 });
 
 client.commands = new Discord.Collection();
@@ -65,3 +65,4 @@ client.on('ready', async () => {
 });
 
 client.login(config.discord_token);
+module.exports = { addRole, removeRole };
