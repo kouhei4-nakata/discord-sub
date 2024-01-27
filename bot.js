@@ -4,7 +4,7 @@ const config = require('./config.json');
 const stripe = require('stripe')(config.stripe.secret_key);
 
 const client = new Discord.Client({
-  intents: [Discord.Intents.FLAGS.Guilds]
+  intents: [Discord.Intents.FLAGS.Guilds, Discord.Intents.FLAGS.MessageContent]
 });
 
 client.commands = new Discord.Collection();
