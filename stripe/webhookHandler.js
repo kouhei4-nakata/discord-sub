@@ -17,23 +17,38 @@ app.post('/webhook', async (req, res) => {
         return;
     }
 
-    // 支払いが成功した場合の処理
-    if (event.type === 'checkout.session.completed') {
-        const session = event.data.object;
-        const discordUserId = session.metadata.discordUserId; // DiscordユーザーIDをメタデータから取得
-        const purchasedPriceId = session.metadata.priceId; // 購入された価格IDをメタデータから取得
+    switch (event.type) {
+        case 'checkout.session.completed':
+            // 支払いが成功し、セッションが完了した場合の処理
+            const session = event.data.object;
+            const discordUserId = session.metadata.discordUserId;
+            const purchasedPriceId = session.metadata.priceId;
 
-        // 購入された価格IDに基づいてロールを割り当てる
-        let roleName;
-        if (purchasedPriceId === process.env.INPUT_PLAN_PRICE_ID) {
-            roleName = 'インプット';
-        } else if (purchasedPriceId === process.env.OUTPUT_PLAN_PRICE_ID) {
-            roleName = 'アウトプット';
-        }
+            let roleName;
+            if (purchasedPriceId === process.env.INPUT_PLAN_PRICE_ID) {
+                roleName = 'インプット';
+            } else if (purchasedPriceId === process.env.OUTPUT_PLAN_PRICE_ID) {
+                roleName = 'アウトプット';
+            }
 
-        if (roleName) {
-            await roleManager.assignRole(discordUserId, roleName);
-        }
+            if (roleName) {
+                await roleManager.assignRole(discordUserId, roleName);
+            }
+            break;
+
+        case 'customer.subscription.deleted':
+        case 'customer.subscription.updated':
+            // サブスクリプションが削除された場合、または更新された場合の処理
+            const subscription = event.data.object;
+            const userId = subscription.metadata.discordUserId;
+
+            // サブスクリプションのステータスに応じてロールを剥奪する処理を実装
+            if (event.type === 'customer.subscription.deleted' || (event.type === 'customer.subscription.updated' && subscription.status !== 'active')) {
+                await roleManager.removeRole(userId);
+            }
+            break;
+
+        // 他のイベントタイプに対する処理...
     }
 
     res.json({received: true});
