@@ -2,7 +2,10 @@ require('dotenv').config();
 const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const paymentCommand = require('./commands/paymentCommand.js');
 const { createCheckoutSession } = require('./stripe/stripeClient.js'); // stripeClient.jsから関数をインポート
+const express = require('express');
+const app = express();
 
+// Discordクライアントの設定
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages]
 });
@@ -41,6 +44,18 @@ client.on('interactionCreate', async interaction => {
       console.error('エラーが発生しました:', error);
       await interaction.reply({ content: 'エラーが発生しました。', ephemeral: true });
     }
-  });
+});
 
 client.login(process.env.DISCORD_BOT_TOKEN);
+
+// Expressアプリケーションの設定
+app.use(express.json()); // JSONボディのパースに必要
+
+// ここに他のExpressルートハンドラを追加することができます
+// 例: app.post('/webhook', webhookHandler);
+
+// Railwayから提供されるPORT環境変数を使用してサーバーを起動
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Express server is running on port ${PORT}`);
+});
