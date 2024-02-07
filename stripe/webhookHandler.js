@@ -1,57 +1,62 @@
 const express = require('express');
-const bodyParser = require('body-parser');
+//require('dotenv').config({ path: '../.env' });
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const roleManager = require('../discord/roleManager.js');
 
-const app = express();
-app.use(bodyParser.json());
+function setupWebhookHandler(app) {
+    app.post('/webhook', express.raw({type: 'application/json'}), async (request, response) => {
+        console.log(request.headers['stripe-signature']);
+        console.log(request.body.toString()); // リクエストボディを文字列としてログに出力
 
-app.post('/webhook', async (req, res) => {
-    const sig = req.headers['stripe-signature'];
-    let event;
+        const sigHeader = request.headers['stripe-signature'];
+        const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET; // 環境変数からウェブフックシークレットを取得
 
-    try {
-        event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-    } catch (err) {
-        res.status(400).send(`Webhook Error: ${err.message}`);
-        return;
-    }
+        let event;
 
-    switch (event.type) {
-        case 'checkout.session.completed':
-            // 支払いが成功し、セッションが完了した場合の処理
-            const session = event.data.object;
-            const discordUserId = session.metadata.discordUserId;
-            const purchasedPriceId = session.metadata.priceId;
+        try {
+            // 署名検証
+            event = stripe.webhooks.constructEvent(request.body, sigHeader, endpointSecret);
+        } catch (err) {
+            // 署名検証失敗
+            console.error(err);
+            response.status(400).send(`Webhook Error: ${err.message}`);
+            return;
+        }
 
-            let roleName;
-            if (purchasedPriceId === process.env.INPUT_PLAN_PRICE_ID) {
-                roleName = 'インプット';
-            } else if (purchasedPriceId === process.env.OUTPUT_PLAN_PRICE_ID) {
-                roleName = 'アウトプット';
-            }
+        // イベントタイプに応じた処理を行う
+        switch (event.type) {
+            case 'checkout.session.completed':
+                const session = event.data.object;
+                const discordUserId = session.metadata.discordUserId;
+                const purchasedPriceId = session.metadata.priceId;
 
-            if (roleName) {
-                await roleManager.assignRole(discordUserId, roleName);
-            }
-            break;
+                let roleName;
+                if (purchasedPriceId === process.env.INPUT_PLAN_PRICE_ID) {
+                    roleName = 'インプット';
+                } else if (purchasedPriceId === process.env.OUTPUT_PLAN_PRICE_ID) {
+                    roleName = 'アウトプット';
+                }
+        
+                // ロール名が設定されている場合、Discordのユーザーにロールを割り当てる
+                if (roleName) {
+                    await roleManager.assignRole(discordUserId, roleName);
+                }
+                break;
+        
+            case 'customer.subscription.deleted':
+            case 'customer.subscription.updated':
+                const subscription = event.data.object;
+                const userId = subscription.metadata.discordUserId;
+        
+                if (event.type === 'customer.subscription.deleted' || (event.type === 'customer.subscription.updated' && subscription.status !== 'active')) {
+                    await roleManager.removeRole(userId);
+                }
+                break;
+        }
+        
+        // 応答
+        response.status(200).end();
+    });
+}
 
-        case 'customer.subscription.deleted':
-        case 'customer.subscription.updated':
-            // サブスクリプションが削除された場合、または更新された場合の処理
-            const subscription = event.data.object;
-            const userId = subscription.metadata.discordUserId;
-
-            // サブスクリプションのステータスに応じてロールを剥奪する処理を実装
-            if (event.type === 'customer.subscription.deleted' || (event.type === 'customer.subscription.updated' && subscription.status !== 'active')) {
-                await roleManager.removeRole(userId);
-            }
-            break;
-
-        // 他のイベントタイプに対する処理...
-    }
-
-    res.json({received: true});
-});
-
-app.listen(3000, () => console.log('Running on port 3000'));
+module.exports = setupWebhookHandler;
