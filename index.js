@@ -46,7 +46,12 @@ client.on('interactionCreate', async interaction => {
       }
     } catch (error) {
       console.error('エラーが発生しました:', error);
-      await interaction.reply({ content: 'エラーが発生しました。', ephemeral: true });
+      // エラーメッセージを安全に送信するために `interaction.followUp` を使用
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({ content: 'エラーが発生しました。', ephemeral: true });
+      } else {
+        await interaction.reply({ content: 'エラーが発生しました。', ephemeral: true });
+      }
     }
 });
 
