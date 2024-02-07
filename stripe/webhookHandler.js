@@ -1,5 +1,5 @@
 const express = require('express');
-//require('dotenv').config({ path: '../.env' });
+require('dotenv').config({ path: '../.env' });
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const roleManager = require('../discord/roleManager.js');
 
@@ -24,12 +24,11 @@ function setupWebhookHandler(app) {
         }
 
         // イベントタイプに応じた処理を行う
+        
         switch (event.type) {
             case 'checkout.session.completed':
                 const session = event.data.object;
                 const discordUserId = session.metadata.discordUserId;
-                const purchasedPriceId = session.metadata.priceId;
-
                 let roleName;
                 if (purchasedPriceId === process.env.INPUT_PLAN_PRICE_ID) {
                     roleName = 'インプット';
@@ -39,7 +38,11 @@ function setupWebhookHandler(app) {
         
                 // ロール名が設定されている場合、Discordのユーザーにロールを割り当てる
                 if (roleName) {
-                    await roleManager.assignRole(discordUserId, roleName);
+                    try {
+                        await roleManager.assignRole(discordUserId, roleName);
+                    } catch (error) {
+                        console.error('Error assigning role:', error);
+                    }
                 }
                 break;
         
@@ -49,11 +52,15 @@ function setupWebhookHandler(app) {
                 const userId = subscription.metadata.discordUserId;
         
                 if (event.type === 'customer.subscription.deleted' || (event.type === 'customer.subscription.updated' && subscription.status !== 'active')) {
-                    await roleManager.removeRole(userId);
+                    try {
+                        await roleManager.removeRole(userId);
+                    } catch (error) {
+                        console.error('Error removing role:', error);
+                    }
                 }
                 break;
         }
-        
+                
         // 応答
         response.status(200).end();
     });
