@@ -24,31 +24,35 @@ function setupWebhookHandler(app) {
         }
 
         // イベントタイプに応じた処理を行う
-        
         switch (event.type) {
             case 'checkout.session.completed':
                 const session = event.data.object;
                 const discordUserId = session.metadata.discordUserId;
-                // 購入されたプランのIDを取得
-                const purchasedPriceId = session.amount_total; // または適切なプロパティに修正してください
-        
-                let roleName;
-                if (purchasedPriceId === process.env.INPUT_PLAN_PRICE_ID) {
-                    roleName = 'インプット';
-                } else if (purchasedPriceId === process.env.OUTPUT_PLAN_PRICE_ID) {
-                    roleName = 'アウトプット';
-                }
-                
-                // ロール名が設定されている場合、Discordのユーザーにロールを割り当てる
-                if (roleName) {
-                    try {
-                        await roleManager.assignRole(discordUserId, roleName);
-                    } catch (error) {
-                        console.error('Error assigning role:', error);
+
+                // Stripe APIを使用してline_itemsを取得
+                const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 1 });
+                if (lineItems.data.length > 0) {
+                    const purchasedPriceId = lineItems.data[0].price.id; // プランIDまたは価格IDを取得
+
+                    let roleName;
+                    if (purchasedPriceId === process.env.INPUT_PLAN_PRICE_ID) {
+                        roleName = 'インプット';
+                    } else if (purchasedPriceId === process.env.OUTPUT_PLAN_PRICE_ID) {
+                        roleName = 'アウトプット';
+                    }
+
+                    // ロール名が設定されている場合、Discordのユーザーにロールを割り当てる
+                    if (roleName) {
+                        try {
+                            await roleManager.assignRole(discordUserId, roleName);
+                        } catch (error) {
+                            console.error('Error assigning role:', error);
+                        }
                     }
                 }
                 break;
             // 他のケース
+
                 
             case 'customer.subscription.deleted':
             case 'customer.subscription.updated':
