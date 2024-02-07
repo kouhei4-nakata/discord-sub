@@ -29,13 +29,16 @@ function setupWebhookHandler(app) {
             case 'checkout.session.completed':
                 const session = event.data.object;
                 const discordUserId = session.metadata.discordUserId;
+                // 購入されたプランのIDを取得
+                const purchasedPriceId = session.amount_total; // または適切なプロパティに修正してください
+        
                 let roleName;
                 if (purchasedPriceId === process.env.INPUT_PLAN_PRICE_ID) {
                     roleName = 'インプット';
                 } else if (purchasedPriceId === process.env.OUTPUT_PLAN_PRICE_ID) {
                     roleName = 'アウトプット';
                 }
-        
+                
                 // ロール名が設定されている場合、Discordのユーザーにロールを割り当てる
                 if (roleName) {
                     try {
@@ -45,7 +48,8 @@ function setupWebhookHandler(app) {
                     }
                 }
                 break;
-        
+            // 他のケース
+                
             case 'customer.subscription.deleted':
             case 'customer.subscription.updated':
                 const subscription = event.data.object;
