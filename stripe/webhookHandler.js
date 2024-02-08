@@ -55,26 +55,30 @@ function setupWebhookHandler(app) {
 
              case 'customer.subscription.deleted':
                 const subscription = event.data.object;
-                // metadataの内容をログに出力
-                console.log('Received metadata:', subscription.metadata);
+                // サブスクリプションIDを使用してStripe APIを呼び出し、サブスクリプションの詳細を取得
+                const fullSubscription = await stripe.subscriptions.retrieve(subscription.id);
+                // fullSubscriptionから価格IDを取得
+                const priceId = fullSubscription.items.data[0].price.id;
             
-                const userId = subscription.metadata.discordUserId;
-                const roleName = subscription.metadata.roleName;
+                let roleName;
+                if (priceId === process.env.INPUT_PLAN_PRICE_ID) {
+                    roleName = 'インプット';
+                } else if (priceId === process.env.OUTPUT_PLAN_PRICE_ID) {
+                    roleName = 'アウトプット';
+                }
             
-                console.log(`Extracted userId: ${userId}, roleName: ${roleName}`); // 抽出した値をログに出力
-            
-                // 以下、ロール剥奪の処理...            
-                if (userId && roleName) {
+                if (roleName) {
                     try {
+                        // ここでuserIdではなく、subscription.customerを使用してユーザーIDを取得する必要があるかもしれません
+                        const userId = subscription.customer; // 顧客IDをユーザーIDとして使用
                         await roleManager.removeRole(userId, roleName);
                     } catch (error) {
                         console.error('Error removing role:', error);
                     }
                 } else {
-                    console.error('discordUserId or roleName is undefined.');
+                    console.error('Role name could not be determined from price ID.');
                 }
-                break;
-        }
+                break;        }
 
         // 応答
         response.status(200).end();
