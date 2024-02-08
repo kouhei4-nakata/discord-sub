@@ -55,10 +55,15 @@ function setupWebhookHandler(app) {
 
              case 'customer.subscription.deleted':
                 const subscription = event.data.object;
-                // metadataからdiscordUserIdとroleNameを取得
+                // metadataの内容をログに出力
+                console.log('Received metadata:', subscription.metadata);
+            
                 const userId = subscription.metadata.discordUserId;
                 const roleName = subscription.metadata.roleName;
             
+                console.log(`Extracted userId: ${userId}, roleName: ${roleName}`); // 抽出した値をログに出力
+            
+                // 以下、ロール剥奪の処理...            
                 if (userId && roleName) {
                     try {
                         await roleManager.removeRole(userId, roleName);
