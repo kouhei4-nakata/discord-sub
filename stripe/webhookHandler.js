@@ -23,11 +23,13 @@ function setupWebhookHandler(app) {
             return;
         }
 
+        let discordUserId; // ここでdiscordUserIdを宣言
+
         // イベントタイプに応じた処理を行う
         switch (event.type) {
             case 'checkout.session.completed':
                 const session = event.data.object;
-                const discordUserId = session.metadata.discordUserId;
+                discordUserId = session.metadata.discordUserId; // 値を割り当て
 
                 // Stripe APIを使用してline_itemsを取得
                 const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 1 });
@@ -51,13 +53,12 @@ function setupWebhookHandler(app) {
                     }
                 }
                 break;
-             // 他のケース...
-
-             case 'customer.subscription.deleted':
+            case 'customer.subscription.deleted':
                 const subscription = event.data.object;
                 // サブスクリプションIDを使用してStripe APIを呼び出し、サブスクリプションの詳細を取得
                 const fullSubscription = await stripe.subscriptions.retrieve(subscription.id);
-                // fullSubscriptionから価格IDを取得
+                discordUserId = fullSubscription.metadata.discordUserId; // 値を割り当て
+
                 const priceId = fullSubscription.items.data[0].price.id;
             
                 let roleName;
@@ -67,22 +68,22 @@ function setupWebhookHandler(app) {
                     roleName = 'アウトプット';
                 }
             
-                if (roleName) {
+                if (roleName && discordUserId) {
                     try {
-                        // ここでuserIdではなく、subscription.customerを使用してユーザーIDを取得する必要があるかもしれません
-                        const userId = subscription.customer; // 顧客IDをユーザーIDとして使用
-                        await roleManager.removeRole(userId, roleName);
+                        // DiscordのユーザーIDを使用してロールを削除
+                        await roleManager.removeRole(discordUserId, roleName);
                     } catch (error) {
                         console.error('Error removing role:', error);
                     }
                 } else {
-                    console.error('Role name could not be determined from price ID.');
+                    console.error('Role name or Discord user ID could not be determined.');
                 }
-                break;        }
-
-        // 応答
-        response.status(200).end();
-    });
-}
-
-module.exports = setupWebhookHandler;
+                break;
+                // 他のイベントタイプに対する処理をここに追加...
+            }
+    
+            response.status(200).end();
+        });
+    }
+    
+    module.exports = setupWebhookHandler;
