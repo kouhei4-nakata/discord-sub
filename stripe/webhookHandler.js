@@ -57,16 +57,20 @@ function setupWebhookHandler(app) {
                 const subscription = event.data.object;
                 // サブスクリプションIDを使用してStripe APIを呼び出し、サブスクリプションの詳細を取得
                 const fullSubscription = await stripe.subscriptions.retrieve(subscription.id);
-                discordUserId = fullSubscription.metadata.discordUserId; // 値を割り当て
-
-                const priceId = fullSubscription.items.data[0].price.id;
+                console.log(`Subscription retrieved: ${fullSubscription.id}`); // サブスクリプションの取得をログに出力
             
-                let roleName;
-                if (priceId === process.env.INPUT_PLAN_PRICE_ID) {
-                    roleName = 'インプット';
-                } else if (priceId === process.env.OUTPUT_PLAN_PRICE_ID) {
-                    roleName = 'アウトプット';
-                }
+                // ここでmetadataからDiscordユーザーIDとロール名を取得
+                discordUserId = fullSubscription.metadata.discordUserId; // 値を割り当て
+                console.log(`Retrieved discordUserId: ${discordUserId}`); // discordUserIdの取得をログに出力
+            
+                // metadataからロール名を取得するように変更
+                let roleName = fullSubscription.metadata.roleName; // metadataからロール名を取得
+                console.log(`Determined roleName: ${roleName}`); // roleNameの決定をログに出力
+            
+                if (!discordUserId || !roleName) {
+                    console.error('Role name or Discord user ID could not be determined.');
+                    return;
+                }            
             
                 if (roleName && discordUserId) {
                     try {
@@ -78,8 +82,7 @@ function setupWebhookHandler(app) {
                 } else {
                     console.error('Role name or Discord user ID could not be determined.');
                 }
-                break;
-                // 他のイベントタイプに対する処理をここに追加...
+                break;                // 他のイベントタイプに対する処理をここに追加...
             }
     
             response.status(200).end();
