@@ -18,7 +18,6 @@ module.exports = {
     removeRole: async function(userId, roleName) {
         console.log(`Trying to remove role '${roleName}' from user '${userId}' in guild '${process.env.GUILD_ID}'`);
         
-        // 引数のチェックを追加
         if (!userId || !roleName) {
             console.error(`Invalid arguments: userId=${userId}, roleName=${roleName}`);
             return;
@@ -31,14 +30,14 @@ module.exports = {
         }
         const role = guild.roles.cache.find(r => r.name === roleName);
         if (!role) {
-            console.log(`Role not found: ${roleName}`);
+            console.error(`Role not found: ${roleName}`);
             return;
         }
         try {
             const member = await guild.members.fetch(userId);
             await member.roles.remove(role.id);
         } catch (error) {
-            console.error(`Error removing role: ${error}`);
+            console.error(`Error removing role from user ${userId}: ${error}`);
         }
     }
 }
