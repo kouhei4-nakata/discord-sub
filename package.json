@@ -12,13 +12,12 @@
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^5.9.1",
-    "prisma": "^5.9.1",
     "discord.js": "^14.14.1",
     "dotenv": "^16.4.1",
     "express": "^4.18.2",
-    "stripe": "^14.15.0"
+    "stripe": "^14.15.0",
+    "prisma": "^5.9.1" 
   },
   "devDependencies": {
-    "prisma": "^5.9.1"
   }
 }
