@@ -6,7 +6,7 @@ const paymentCommand = require('./commands/paymentCommand.js');
 const { createCheckoutSession } = require('./stripe/stripeClient.js');
 const express = require('express');
 const app = express();
-const setupWebhookHandler = require('./stripe/webhookHandler.js');
+const { setupWebhookHandler } = require('./stripe/webhookHandler.js');
 
 // Discordクライアントの設定
 const client = new Client({
