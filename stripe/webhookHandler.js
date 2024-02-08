@@ -51,24 +51,24 @@ function setupWebhookHandler(app) {
                     }
                 }
                 break;
-            // 他のケース
+             // 他のケース...
 
-                
             case 'customer.subscription.deleted':
             case 'customer.subscription.updated':
                 const subscription = event.data.object;
                 const userId = subscription.metadata.discordUserId;
-        
+                const roleName = subscription.metadata.roleName; // メタデータからロール名を取得
+
                 if (event.type === 'customer.subscription.deleted' || (event.type === 'customer.subscription.updated' && subscription.status !== 'active')) {
                     try {
-                        await roleManager.removeRole(userId);
+                        await roleManager.removeRole(userId, roleName); // ロール名を引数に追加してロールを剥奪
                     } catch (error) {
                         console.error('Error removing role:', error);
                     }
                 }
                 break;
         }
-                
+
         // 応答
         response.status(200).end();
     });
