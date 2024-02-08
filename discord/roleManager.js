@@ -17,6 +17,13 @@ module.exports = {
     },
     removeRole: async function(userId, roleName) {
         console.log(`Trying to remove role '${roleName}' from user '${userId}' in guild '${process.env.GUILD_ID}'`);
+        
+        // 引数のチェックを追加
+        if (!userId || !roleName) {
+            console.error(`Invalid arguments: userId=${userId}, roleName=${roleName}`);
+            return;
+        }
+    
         const guild = discordClient.guilds.cache.get(process.env.GUILD_ID);
         if (!guild) {
             console.error(`Guild not found: ${process.env.GUILD_ID}. Make sure the bot is in the guild and the GUILD_ID is correct.`);
@@ -34,4 +41,5 @@ module.exports = {
             console.error(`Error removing role: ${error}`);
         }
     }
-    };
+}
+
