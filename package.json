@@ -5,17 +5,18 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "jest"
+    "test": "jest",
+    "prisma:generate": "prisma generate"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@prisma/client": "^5.9.1",
     "discord.js": "^14.14.1",
     "dotenv": "^16.4.1",
     "express": "^4.18.2",
-    "stripe": "^14.15.0"
-  },
-  "devDependencies": {
+    "stripe": "^14.15.0",
     "prisma": "^5.9.1"
-  }
+  },
+  "devDependencies": {}
 }
