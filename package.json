@@ -4,7 +4,7 @@
   "description": "Discordでの決済を管理するボット",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "prisma generate && node index.js",
     "test": "jest",
     "prisma:generate": "prisma generate"
   },
