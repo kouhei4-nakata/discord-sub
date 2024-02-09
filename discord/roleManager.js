@@ -1,5 +1,6 @@
 const discordClient = require('./discordClient.js');
 
+
 module.exports = {
     assignRole: async function(userId, roleName) {
         const guild = discordClient.guilds.cache.get(process.env.GUILD_ID);
@@ -39,6 +40,18 @@ module.exports = {
         } catch (error) {
             console.error(`Error removing role '${roleName}' from user '${userId}': ${error}`);
         }
+    },
+    hasRole: async function(userId, roleName) {
+        const guild = discordClient.guilds.cache.get(process.env.GUILD_ID);
+        try {
+            const member = await guild.members.fetch(userId);
+            return member.roles.cache.some(role => role.name === roleName);
+        } catch (error) {
+            console.error(`Error checking role '${roleName}' for user '${userId}': ${error}`);
+            return false;
+        }
     }
 }
+
+
 
