@@ -6,7 +6,8 @@
   "scripts": {
     "start": "npx prisma generate && node index.js",
     "test": "jest",
-    "prisma:generate": "npx prisma generate"
+    "prisma:generate": "npx prisma generate",
+    "build": "echo 'No build step required'"
   },
   "author": "",
   "license": "ISC",
