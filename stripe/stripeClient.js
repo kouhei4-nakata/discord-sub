@@ -36,7 +36,7 @@ async function createCheckoutSession(discordUserId, planId) {
 
     return session.url;
   } catch (error) {
-    console.error('Checkout session creation failed:', error);
+    console.error(`Checkout session creation failed for user '${discordUserId}' with plan '${planId}':`, error);
     throw error;
   }
 }

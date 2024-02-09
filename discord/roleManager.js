@@ -12,7 +12,7 @@ module.exports = {
             const member = await guild.members.fetch(userId);
             await member.roles.add(role.id);
         } catch (error) {
-            console.error(`Error assigning role: ${error}`); // エラーハンドリングの強化
+            console.error(`Error assigning role '${roleName}' to user '${userId}': ${error}`);
         }
     },
     removeRole: async function(userId, roleName) {
@@ -37,7 +37,7 @@ module.exports = {
             const member = await guild.members.fetch(userId);
             await member.roles.remove(role.id);
         } catch (error) {
-            console.error(`Error removing role from user ${userId}: ${error}`);
+            console.error(`Error removing role '${roleName}' from user '${userId}': ${error}`);
         }
     }
 }
