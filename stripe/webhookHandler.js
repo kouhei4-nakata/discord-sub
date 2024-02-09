@@ -27,51 +27,71 @@ function setupWebhookHandler(app) {
                 const session = event.data.object;
                 const discordUserId = session.metadata.discordUserId;
                 const roleName = session.metadata.roleName;
+                const subscriptionId = session.subscription; // サブスクリプションIDを取得
 
-                // ロールの割り当て
-                if (roleName) {
-                    try {
-                        await roleManager.assignRole(discordUserId, roleName);
-                    } catch (error) {
-                        console.error('Error assigning role:', error);
-                    }
+                // データベースにサブスクリプション情報を保存
+                try {
+                    await prisma.subscription.create({
+                        data: {
+                            discordUserId: discordUserId,
+                            roleName: roleName,
+                            subscriptionId: subscriptionId,
+                        },
+                    });
+                    await roleManager.assignRole(discordUserId, roleName);
+                    console.log(`Assigned role '${roleName}' to user '${discordUserId}'`);
+                } catch (error) {
+                    console.error('Error during subscription creation or role assignment:', error);
                 }
-                console.log(`Assigning role '${roleName}' to user '${discordUserId}'`);
+                break;
+            case 'invoice.paid':
+                // インボイスが支払われたときの処理
+                const invoice = event.data.object;
+                const subscriptionIdForInvoice = invoice.subscription;
+
+                // データベースからサブスクリプション情報を検索し、有効期限を更新
+                try {
+                    const subscription = await prisma.subscription.findUnique({
+                        where: { subscriptionId: subscriptionIdForInvoice },
+                    });
+                    if (subscription) {
+                        const newExpirationDate = new Date();
+                        newExpirationDate.setMonth(newExpirationDate.getMonth() + 1);
+                        await prisma.subscription.update({
+                            where: { subscriptionId: subscriptionIdForInvoice },
+                            data: { expirationDate: newExpirationDate },
+                        });
+                        console.log(`Updated expiration date for subscription: ${subscriptionIdForInvoice}`);
+                    }
+                } catch (error) {
+                    console.error('Error updating subscription expiration date:', error);
+                }
                 break;
             case 'customer.subscription.deleted':
-                const subscriptionId = event.data.object.id;
-
+                const subscriptionIdToDelete = event.data.object.id;
+            
                 // データベースからサブスクリプション情報を検索し、削除
-                const subscription = await prisma.subscription.findUnique({
-                  where: {
-                    subscriptionId: subscriptionId,
-                  },
-                });
-
-                if (subscription) {
-                  const { discordUserId, roleName } = subscription;
-                  // ロールの削除
-                  try {
-                      await roleManager.removeRole(discordUserId, roleName);
-                  } catch (error) {
-                      console.error('Error removing role:', error);
-                  }
-
-                  // データベースからサブスクリプション情報を削除
-                  await prisma.subscription.delete({
-                    where: {
-                      subscriptionId: subscriptionId,
-                    },
-                  });
+                try {
+                    const subscriptionToDelete = await prisma.subscription.findUnique({
+                        where: { subscriptionId: subscriptionIdToDelete },
+                    });
+                    if (subscriptionToDelete) {
+                        const { discordUserId, roleName } = subscriptionToDelete;
+                        await roleManager.removeRole(discordUserId, roleName);
+                        console.log(`Removed role '${roleName}' from user '${discordUserId}' due to subscription deletion`);
+                        await prisma.subscription.delete({
+                            where: { subscriptionId: subscriptionIdToDelete },
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error removing role or deleting subscription:', error);
                 }
-                console.log(`Removing role '${roleName}' from user '${discordUserId}' due to subscription deletion`);
                 break;
             // 他のイベントタイプに対する処理をここに追加...
             default:
                 console.log(`Unhandled event type: ${event.type}`);
         }   
         
-
         response.status(200).end();
     });
 }
