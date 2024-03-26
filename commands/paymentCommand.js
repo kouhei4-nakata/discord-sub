@@ -4,11 +4,16 @@ const roleManager = require('../discord/roleManager.js'); // roleManagerのイ�
 
 module.exports = {
     execute: async function(interaction) {
+        // ユーザーにローディング状態を示す
+        await interaction.deferReply({ ephemeral: true });
+
         const discordUserId = interaction.user.id;
+        // ロールの確認を行う
         const hasInputRole = await roleManager.hasRole(discordUserId, 'インプット');
         const hasOutputRole = await roleManager.hasRole(discordUserId, 'アウトプット');
 
         let options = [];
+        // ロールに基づいて選択肢を設定
         if (hasInputRole) {
             options.push({
                 label: 'アップグレード',
@@ -18,7 +23,7 @@ module.exports = {
             options.push({
                 label: '解約',
                 description: 'サブスクリプションを解約します',
-                value: 'cancel',
+                value: 'サポートにお問い合わせください',
             });
         } else if (hasOutputRole) {
             options.push({
@@ -40,6 +45,7 @@ module.exports = {
             });
         }
 
+        // 選択肢を含むメニューを作成
         const selectMenuRow = new ActionRowBuilder()
             .addComponents(
                 new StringSelectMenuBuilder()
@@ -48,6 +54,7 @@ module.exports = {
                     .addOptions(options),
             );
 
-        await interaction.reply({ content: 'プランを選択してください。', components: [selectMenuRow], ephemeral: true });
+        // ロールの確認が完了したら、選択肢をユーザーに表示
+        await interaction.editReply({ content: 'プランを選択してください。', components: [selectMenuRow], ephemeral: true });
     }
 };

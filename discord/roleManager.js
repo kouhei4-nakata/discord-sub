@@ -44,7 +44,7 @@ module.exports = {
     hasRole: async function(userId, roleName) {
         const guild = discordClient.guilds.cache.get(process.env.GUILD_ID);
         try {
-            const member = await guild.members.fetch(userId);
+            const member = await guild.members.fetch(userId, { force: true });
             return member.roles.cache.some(role => role.name === roleName);
         } catch (error) {
             console.error(`Error checking role '${roleName}' for user '${userId}': ${error}`);
